@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "#Kaggle Housing Prices Setup\n\ntrain <- read.csv(\"train.csv\")\ntest <- read.csv(\"test.csv\")\n\n\n",
+    "created" : 1493945532670.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2806525189",
+    "id" : "9E622621",
+    "lastKnownWriteTime" : 1493945615,
+    "last_content_update" : 1493945615888,
+    "path" : "C:/R/house_prices/S001-Setup.R",
+    "project_path" : "S001-Setup.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
