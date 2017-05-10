@@ -1,17 +1,4 @@
-# Predict the house price
-**Statement** As a new Kaggler who just created his account a day ago, I am quite excited to hand in my
-first submission. Without any professional background in CS/Statistics, I have learned data mining, machine learning
-and R by myself. My lack of experience may make the model not perfect, but I do love to share my opinions. And I hope 
-my dear experienced Kaggle friends can give me some advice/suggestion/criticism of this project. Thanks in advance.
 
-**Updated** Seems that I have to learn to implement XGBoost model if I want a higher score in the competition. The package
-is amazingly convenient, however I also encountered the problem of parameter tuning. Meanwhile, it seems to be true that my 
-feature engineering is too naive. With different categorical variables, I need to examine them one by one rather than transform
-them to integer directly. I will try to do this later and see the magic of feature engineering.
-
-### Read Data and Load Packages 
-
-```{r,message=FALSE, warning=FALSE}
 # Load Packages
 library(MASS) 
 library(Metrics)
@@ -22,8 +9,7 @@ library(ggplot2)
 library(xgboost)
 library(Matrix)
 library(methods)
-```
-```{r load}
+
 # Read Data
 Training <- read.csv("train.csv")
 Test <- read.csv("test.csv")
@@ -32,21 +18,6 @@ names(Training)
 
 ```
 
-After that, the whole procedure has begun. I divide the whole process into four steps:
-
-* Data Cleansing
-* Descriptive Analysis
-* Model Selection
-* Final Prediction
-
-
-### Data Cleansing
-It is important to clean the data with some specific rules, otherwise the precision of result can be jeopardized. After summarizing
-training set, it is not diffcult to find that some data columns got too many missing values. We first have look on the number of missing
-values in every variable. 
-
-
-```{r,message=FALSE, warning=FALSE}
 
 Num_NA<-sapply(Training,function(y)length(which(is.na(y)==T)))
 NA_Count<- data.frame(Item=colnames(Training),Count=Num_NA)
@@ -112,14 +83,12 @@ p
 ```
 It is not diffcult to find that the price of house increases generally with the year built, the trend is obvious. 
 
-The workload of data exploration is huge so I decide to end it at here. More details can be digged out by performing descriptive analysis.
-
 ### Model Selection
 
 Before implementing models, one should first split the training set of data into 2 parts: a training set within the training set and a test set that can be used for evaluation.
 Personally I prefer to split it with the ratio of 6:4, ***But if someone can tell me what spliting ratio is proved to be scienticfic I will be really grateful***
-
-```{r,message=FALSE, warning=FALSE}
+  
+  ```{r,message=FALSE, warning=FALSE}
 # Split the data into Training and Test Set # Ratio: 6:4 ###
 Training_Inner<- Training[1:floor(length(Training[,1])*0.6),]
 Test_Inner<- Training[(length(Training_Inner[,1])+1):1460,]
@@ -132,7 +101,6 @@ The first and simplest but useful model is linear regression model. As the first
 ```{r,message=FALSE,warning=FALSE}
 reg1<- lm(SalePrice~., data = Training_Inner)
 summary(reg1)
-```
 
 R Square is not bad, but many variables do not pass the Hypothesis Testing, so the model is not perfect. Potential overfitting will occur if someone insist on using it. Therefore,
 the variable selection process should be involved in model construction. I prefer to use Step AIC method.
@@ -146,7 +114,7 @@ reg1_Modified_2<-lm(formula = SalePrice ~ MSSubClass + LotArea +
                       BsmtQual + BsmtCond + BsmtFinSF1 + BsmtFinSF2 + 
                       BsmtUnfSF + X1stFlrSF + X2ndFlrSF + BedroomAbvGr + KitchenAbvGr + 
                       KitchenQual + TotRmsAbvGrd + Functional + Fireplaces + FireplaceQu + 
-                       GarageYrBlt + GarageCars +  SaleCondition, 
+                      GarageYrBlt + GarageCars +  SaleCondition, 
                     data = Training_Inner)
 summary(reg1_Modified_2)
 ```
@@ -175,27 +143,23 @@ laa<- lars(Independent_variable,Dependent_Variable,type = 'lasso')
 plot(laa)
 ```
 
-The plot is messy as the quantity of variables is intimidating. Despite that, we can still use R to find out the model with least multicollinearity. The selection 
-procedure is based on the value of Marrow's cp, an important indicator of multicollinearity. The prediction can be done by the script-chosen best step and RMSE can be used
-to assess the model.
 
 ```{r,message=FALSE,warning=FALSE}
 best_step<- laa$df[which.min(laa$Cp)]
 Prediction_2<- predict.lars(laa,newx =as.matrix(Test_Inner[,1:76]), s=best_step, type= "fit")
 rmse(log(Test_Inner$SalePrice),log(Prediction_2$fit))
+
 ```
 
 #### Model 3: Random Forest
 
-The other model I chose to fit in the training set is Random Forest model. The model, prediction and RMSE calculation can be found below:
+#The other model I chose to fit in the training set is Random Forest model. The model, prediction and RMSE calculation can be found below:
 
-```{r,message=FALSE, warning=FALSE}
 for_1<- randomForest(SalePrice~.,data= Training_Inner)
 Prediction_3 <- predict(for_1, newdata= Test_Inner)
 rmse(log(Test_Inner$SalePrice),log(Prediction_3))
-```
 
-Obviously, Random Forest may produce the best result within the training set so far. 
+#Obviously, Random Forest may produce the best result within the training set so far. 
 
 #### Model 4: XGBoost 
 
@@ -209,107 +173,99 @@ test <- as(test, "sparseMatrix")
 # Never forget to exclude objective variable in 'data option'
 train_Data <- xgb.DMatrix(data = train[,2:76], label = train[,"SalePrice"])
 ```
-Then I tune the parameters of xgboost model by building a 20-iteration for-loop. **Not sure whether this method is reliable but really time-consuming**
-```{r,message=FALSE,warning=FALSE,eval=FALSE}
+#Then I tune the parameters of xgboost model by building a 20-iteration for-loop. **Not sure whether this method is reliable but really time-consuming**
 # Tuning the parameters #
 # Creat Empty List
+library(xgboost)
 All_rmse<- c()
 Param_group<-c()
 for (iter in 1:20) {
-  param <- list(objective = "reg:linear",
-                eval_metric = "rmse",
-                booster = "gbtree",
-                max_depth = sample(6:10, 1),
-                eta = runif(1, 0.01, 0.3),
-                gamma = runif(1, 0.0, 0.2), 
-                subsample = runif(1, 0.6, 0.9),
-                colsample_bytree = runif(1, 0.5, 0.8)
-                
-  )
-  cv.nround = 500
-  cv.nfold = 4
-  mdcv <- xgb.cv(data=train_Data, params = param, nthread=6, 
-                 nfold=cv.nfold, nrounds=cv.nround,verbose = TRUE)
- # Least Mean_Test_RMSE as Indicator # 
-  min_rmse<- min(mdcv[,test.rmse.mean])
-  All_rmse<-append(All_rmse,min_rmse)
-  Param_group<-append(Param_group,param)
-  # Select Param
-  param<-Param_group[(which.min(All_rmse)*8+1):(which.min(All_rmse)*8+8)]
-}
-```
-Then, the parameter can be selected by the random process. Since the process is relatively boring, I just skip it in RMarkdown file and use the optimal parameters 
-I got in my local R script for the prediction and evaluation. ** Can I ask some more efficient and intelligent method of parameter tuning from smart Kagglers?
-Looking forward to your advice!!**
-```{r,message=FALSE,warning=FALSE}
-param<-list(
-  objective = "reg:linear",
-  eval_metric = "rmse",
-  booster = "gbtree",
-  max_depth = 8,
-  eta = 0.123,
-  gamma = 0.0385, 
-  subsample = 0.734,
-  colsample_bytree = 0.512
+param <- list(objective = "reg:linear",
+eval_metric = "rmse",
+booster = "gbtree",
+max_depth = sample(6:10, 1),
+eta = runif(1, 0.01, 0.3),
+gamma = runif(1, 0.0, 0.2), 
+subsample = runif(1, 0.6, 0.9),
+colsample_bytree = runif(1, 0.5, 0.8)
+
 )
-```
+cv.nround = 500
+cv.nfold = 4
+mdcv <- xgb.cv(data=train_Data, params = param, nthread=6, 
+nfold=cv.nfold, nrounds=cv.nround,verbose = TRUE)
+# Least Mean_Test_RMSE as Indicator # 
+min_rmse<- min(mdcv[,test.rmse.mean])
+All_rmse<-append(All_rmse,min_rmse)
+Param_group<-append(Param_group,param)
+# Select Param
+param<-Param_group[(which.min(All_rmse)*8+1):(which.min(All_rmse)*8+8)]
+}
 
-The model should be tested before making actual prediction.
 
-```{r,message=FALSE,warning=FALSE}
+#Then, the parameter can be selected by the random process.
+#Since the process is relatively boring, I just skip it in RMarkdown file
+#and use the optimal parameters 
+#I got in my local R script for the prediction and evaluation. ** Can I ask some more efficient and intelligent method of parameter tuning from smart Kagglers?
+#Looking forward to your advice!!**
+
+param<-list(
+objective = "reg:linear",
+eval_metric = "rmse",
+booster = "gbtree",
+max_depth = 8,
+eta = 0.123,
+gamma = 0.0385, 
+subsample = 0.734,
+colsample_bytree = 0.512
+)
+
+#The model should be tested before making actual prediction.
+
 Training <-
-  xgb.train(params = param,
-            data = train_Data,
-            nrounds = 600,
-            watchlist = list(train = train_Data),
-            verbose = TRUE,
-            print_every_n = 50,
-            nthread = 6)
+xgb.train(params = param,
+data = train_Data,
+nrounds = 600,
+watchlist = list(train = train_Data),
+verbose = TRUE,
+print_every_n = 50,
+nthread = 6)
 
 test_data <- xgb.DMatrix(data = test[,2:76])
 
 prediction <- predict(Training, test_data)
 rmse(log(Test_Inner$SalePrice),log(prediction))
-```
 
-### Final Prediction
 
-The final prediction can be done by retraining the training set by using selected parameters. Before prediction, the test set should be transformed into the same form of training set.
-```{r,message=FALSE,warning=FALSE}
 # Transforming Test set #
 Test<- Test[,-c(7,73,74,75)]
 for(i in 1:76){
-  if(is.factor(Test[,i])){
-    Test[,i]<-as.integer(Test[,i])
-  }
+if(is.factor(Test[,i])){
+Test[,i]<-as.integer(Test[,i])
+}
 }
 Test[is.na(Test)]<-0
-```
-Also, we should not forget to transform the test set into the viable form.
 
-```{r,message=FALSE,warning=FALSE,eval=FALSE}
 re_train<- as.matrix(Training,rownames.force =NA)
 re_train<- as(re_train,'sparseMatrix')
 retrain_Data<- xgb.DMatrix(data = re_train[,2:76],label=re_train[,"SalePrice"])
 bstSparse_retrain<- xgb.train(params=param,
-                              data=retrain_Data,
-                              nrounds = 600,
-                              watchlist = list(train = retrain_Data),
-                              verbose = TRUE,
-                              print_every_n = 50,
-                              nthread = 2
-                              )
+data=retrain_Data,
+nrounds = 600,
+watchlist = list(train = retrain_Data),
+verbose = TRUE,
+print_every_n = 50,
+nthread = 2
+)
 
 Test_Matrix<-as.matrix(Test,rownames.force = FALSE)
 Test_Matrix<-as(Test_Matrix,"sparseMatrix")
 Test_Matrix<-xgb.DMatrix(data = Test_Matrix[,2:76])
-```
-Then the prediction process begins.
-```{r,message=FALSE, warning=FALSE,eval=FALSE}
+
+
+#Then the prediction process begins.
+
 Submit<- predict(Training, newdata=Test_Matrix)
 Submit<-data.frame(Id= Test$Id, SalePrice= Submit)
 
 write.csv(Submit, "submit.csv")
-```
-
-***END*** Open to any advice/suggestion/criticism. Advice on the choice of other better models is particularily appreciated!!!!!!!!!!!!!!!!!!!!!!!!!
