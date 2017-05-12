@@ -10,7 +10,6 @@ library(ggplot2)
 #install.packages("ranger")
 library(gbm)
 library(ranger)
-library(tidyverse)
 
 
 train.raw <- read.csv("train.csv")
@@ -170,10 +169,7 @@ makeOneFoldTestPrediction <- function(this_fold,feature_set) {
 # set caret training parameters
 CARET.TRAIN.PARMS <- list(method="gbm")   
 
-CARET.TUNE.GRID <-  expand.grid(n.trees=100, 
-                                interaction.depth=10, 
-                                shrinkage=0.1,
-                                n.minobsinnode=10)
+CARET.TUNE.GRID <-  expand.grid(n.trees=100, interaction.depth=10, shrinkage=0.1,n.minobsinnode=10)
 
 MODEL.SPECIFIC.PARMS <- list(verbose=0) #NULL # Other model specific parameters
 
@@ -203,7 +199,9 @@ cv_y <- do.call(c,lapply(gbm_set,function(x){x$predictions$y}))
 cv_yhat <- do.call(c,lapply(gbm_set,function(x){x$predictions$yhat}))
 rmse(cv_y,cv_yhat)
 
-
+test_gbm_yhat <- predict(gbm_mdl,newdata = L0FeatureSet1$test$predictors,type = "raw")
+gbm_submission <- cbind(Id=L0FeatureSet1$test$id,SalePrice=exp(test_gbm_yhat))
+write.csv(gbm_submission,file="gbm_sumbission.csv",row.names=FALSE)
 
 
 ############
