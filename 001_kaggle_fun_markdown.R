@@ -1,16 +1,16 @@
-Fun with Real Estate
-Data Driven Real Estate Analysis
-Reality tv shows about real estate are all the rage lately, and they drive me nuts because of how unscientific and illogical they are. (Well, that’s not the only reason, but it’s the relevant one.) People with more money than they know what to do with going 10 rounds about the kind of drawer pulls they want to have in their kitchen and where exactly their imported bathroom tile should come from. Blech.
+#Fun with Real Estate
+#Data Driven Real Estate Analysis
+#Reality tv shows about real estate are all the rage lately, and they drive me nuts because of how unscientific and illogical they are. (Well, that’s not the only reason, but it’s the relevant one.) People with more money than they know what to do with going 10 rounds about the kind of drawer pulls they want to have in their kitchen and where exactly their imported bathroom tile should come from. Blech.
 
-This dataset gives us a chance to look into the data on what really influences the value of a house without the garbage impulses of reality tv getting in the way, so I am excited to take a look!
+#This dataset gives us a chance to look into the data on what really influences the value of a house without the garbage impulses of reality tv getting in the way, so I am excited to take a look!
   
-  Plan
-Assemble the data and explore it
-Clean variables, build what is needed
-Three Models: Linear, randomForest, and xgboost
-Choose the best model and make the prediction for entry
-Clean the Data
-So, what do we have here?
+#  Plan
+#Assemble the data and explore it
+#Clean variables, build what is needed
+#Three Models: Linear, randomForest, and xgboost
+#Choose the best model and make the prediction for entry
+#Clean the Data
+#So, what do we have here?
 
 ##  [1] "Id"            "MSSubClass"    "MSZoning"      "LotFrontage"  
 ##  [5] "LotArea"       "Street"        "Alley"         "LotShape"     
